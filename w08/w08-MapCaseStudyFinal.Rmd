@@ -1,0 +1,642 @@
+---
+title: "Visualizing Geospatial Information - A Case Study"
+author: "Cheng Peng"
+date: "West Chester University "
+output:
+  html_document: 
+    toc: yes
+    toc_depth: 4
+    toc_float: yes
+    code_folding: hide
+    code_download: yes
+    smooth_scroll: yes
+    number_sections: yes
+    theme: readable
+---
+<style type="text/css">
+
+div#TOC li {
+    list-style:none;
+    background-image:none;
+    background-repeat:none;
+    background-position:0;
+}
+h1.title {
+  font-size: 24px;
+  color: DarkRed;
+  text-align: center;
+}
+h4.author { /* Header 4 - and the author and data headers use this too  */
+    font-size: 18px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkRed;
+  text-align: center;
+}
+h4.date { /* Header 4 - and the author and data headers use this too  */
+  font-size: 18px;
+  font-family: "Times New Roman", Times, serif;
+  color: DarkBlue;
+  text-align: center;
+}
+h1 { /* Header 3 - and the author and data headers use this too  */
+    font-size: 22px;
+    font-family: "Times New Roman", Times, serif;
+    color: darkred;
+    text-align: center;
+}
+h2 { /* Header 3 - and the author and data headers use this too  */
+    font-size: 18px;
+    font-family: "Times New Roman", Times, serif;
+    color: navy;
+    text-align: left;
+}
+
+h3 { /* Header 3 - and the author and data headers use this too  */
+    font-size: 15px;
+    font-family: "Times New Roman", Times, serif;
+    color: navy;
+    text-align: left;
+}
+
+h4 { /* Header 4 - and the author and data headers use this too  */
+    font-size: 18px;
+    font-family: "Times New Roman", Times, serif;
+    color: darkred;
+    text-align: left;
+}
+</style>
+
+```{r setup, include=FALSE}
+# code chunk specifies whether the R code, warnings, and output 
+# will be included in the output files.
+if (!require("tidyverse")) {
+   install.packages("tidyverse")
+   library(tidyverse)
+}
+if (!require("knitr")) {
+   install.packages("knitr")
+   library(knitr)
+}
+if (!require("sf")) {
+   install.packages("sf")
+   library(sf)
+}
+if (!require("terra")) {
+   install.packages("terra")
+   library(terra)
+}
+if (!require("plotly")) {
+   install.packages("plotly")
+   library(plotly)
+}
+if (!require("dplyr")) {
+   install.packages("dplyr")
+   library(dplyr)
+}
+if (!require("png")) {
+    install.packages("png")             
+    library("png")
+}
+if (!require("spData")) {
+    install.packages("spData")             
+    library("spData")
+}
+if (!require("colourpicker")) {
+    install.packages("colourpicker")              
+    library("colourpicker")
+}
+if (!require("gifski")) {
+    install.packages("gifski")              
+    library("gifski")
+}
+if (!require("magick")) {
+    install.packages("magick")              
+    library("magick")
+}
+if (!require("spDataLarge")) {
+    install.packages("spDataLarge")              
+    library("spDataLarge")
+}
+### ggplot and extensions
+if (!require("ggplot2")) {
+    install.packages("ggplot2")              
+    library("ggplot2")
+}
+if (!require("gganimate")) {
+    install.packages("gganimate")              
+    library("gganimate")
+}
+if (!require("tmap")) {
+    install.packages("tmap")              
+    library("tmap")
+}
+if (!require("sf")) {
+    install.packages("sf")              
+    library("sf")
+}
+if (!require("tigris")) {
+    install.packages("tigris")              
+    library("tigris")
+}
+if (!require("mapview")) {
+    install.packages("mapview")              
+    library("mapview")
+}
+if (!require("pander")) {
+    install.packages("pander")              
+    library("pander")
+}
+if (!require("lattice")) {
+    install.packages("lattice")
+library("lattice")
+}
+if (!require("sp")) {
+    install.packages("sp")
+library("sp")
+}
+if (!require("leaflet")) {
+    install.packages("leaflet")
+library("leaflet")
+}
+if (!require("leafpop")) {
+    install.packages("leafpop")
+library("leafpop")
+}
+if (!require("leafem")) {
+    install.packages("leafem")
+library("leafem")
+}
+if (!require("spDataLarge")) {
+    install.packages("spDataLarge", repos = "https://geocompr.r-universe.dev")
+library("spDataLarge")
+}
+if (!require("htmlwidgets")) {
+    install.packages("htmlwidgets")
+library("htmlwidgets")
+}
+if (!require("leaflet.extras")) {
+    install.packages("leaflet.extras")
+library("leaflet.extras")
+}
+if (!require("htmltools")) {
+    install.packages("htmltools")
+library("htmltools")
+}
+if(!require("png")){
+  install.packages("png")
+  library(png)
+}
+if(!require("viridis")){
+  install.packages("viridis")
+  library(viridis)
+}
+if(!require("ggmap")){
+  install.packages("ggmap")
+  library(ggmap)
+}
+if(!require("webshot")){
+  install.packages("webshot")
+  library(webshot)
+}
+if(!require("htmlwidgets")){
+  install.packages("htmlwidgets")
+  library(htmlwidgets)
+}
+if(!require("animation")){
+  install.packages("animation")
+  library(animation)
+}
+if(!require("gifski")){
+  install.packages("gifski")
+  library(gifski)
+}
+if(!require("htmlTable")){
+  install.packages("htmlTable")
+  library(htmlTable)
+}
+if(!require("magrittr")){
+  install.packages("magrittr")
+  library(magrittr)
+}
+### library(magrittr)
+###
+knitr::opts_chunk$set(echo = TRUE,       
+                      warning = FALSE,   
+                      results = TRUE,   
+                      message = FALSE,
+                      comment = NA)
+```
+
+\
+
+# Introduction
+
+In this note, we use a real data set containing crime cases since 2015 in Philadelphia neighborhoods as an example to illustrate various visual inspections of the given data including basic EDA and inference statistics if the data set has relevant information for inference. You can find other related data sets with information from [OpenDataPhilly](https://opendataphilly.org/datasets/).
+
+
+# Map Shapefiles
+
+We have introduced two basic types of maps: choropleth and reference maps. When analyzing data involving geo-information of specific geographical regions at certain levels such as blocks, neighborhoods, districts, zip codes, counties, states, etc, we need to use a related boundary shapefile to draw the related regions. We use filled colors to denote the values of a key variable of interest. In general, making a choropleth map requires a process of data integration in which other relevant data sources with be merged with the shapefile. 
+
+```{r fig.align='center', out.width="90%"}
+include_graphics("shapeFileContent.png")
+```
+
+
+Plotting a reference map is relatively straightforward, the only required geo-information is longitude and latitude. The point sizes and colors can be mapped to the values of variables other than longitude and latitude. 
+
+
+
+## Data Integration
+
+The visual analysis is based on the following three data sets
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE, results=FALSE}
+##  covid_vaccines_by_census_tract.geojson
+phillyNeighbor  <- st_read("https://pengdsci.github.io/STA553VIZ/w08/Neighborhoods_Philadelphia.geojson")
+philly  <- st_read("https://pengdsci.github.io/STA553VIZ/w08/PhillyNeighborhood-blocks.geojson") # block level data
+phillyCrime <- read.csv("https://pengdsci.github.io/STA553VIZ/w08/PhillyCrimeSince2015.csv")
+###
+phillyCrime$name = toupper(gsub("-", "_", phillyCrime$neighborhood)) 
+# extracting year from variable 'date'
+slash.loc = unlist(gregexpr('/', phillyCrime$date))
+slash2.loc = slash.loc[2*(1:dim(phillyCrime)[1])]
+phillyCrime$year = substr(phillyCrime$date, slash2.loc+1, slash2.loc+4)
+```
+
+Since the crime data set has a neighborhood name which will be used as a key to join the shapefile of the neighborhood. There is no variable in the crime data that can be used as a key to merge with the census tract shapefile. We aggregate relevant information at the neighborhood level to make a choropleth map and a scatter-plot map to display information on individual crime cases.
+
+```{r}
+SubCrime = phillyCrime[,c("dc_key","fatal","name","year")]
+aggregateCrime = aggregate(SubCrime$fatal, by=list(SubCrime$name,SubCrime$year), FUN=length)
+## Longitude and latitude of zip code center
+ZipLon = aggregate(phillyCrime$lng, by=list(phillyCrime$zip_code), FUN=mean)
+ZipLat = aggregate(phillyCrime$lat, by=list(phillyCrime$zip_code), FUN=mean)
+ZipLonLat = merge(ZipLon, ZipLat, by = "Group.1")
+names(ZipLonLat) = c("zip", "lng", "lat")
+##  Zip code crime
+ZipCrimeTable = table(phillyCrime$fatal,  phillyCrime$zip_code)
+ZipCrime = data.frame(zip=as.numeric(names(table(phillyCrime$zip_code))), 
+                      fatal = table(phillyCrime$fatal, phillyCrime$zip_code)[1,],
+                      nonfatal = table(phillyCrime$fatal, phillyCrime$zip_code)[2,],
+                      total.crime = table(phillyCrime$zip_code) 
+                      )
+ZipCrime = ZipCrime[, c("zip", "fatal", "nonfatal", "total.crime.Freq")]
+colnames(ZipCrime) = c("zip", "fatal", "nonfatal", "total.crime")
+ZipCrime = merge(ZipLonLat, ZipCrime, by = "zip")
+```
+
+
+# Visual Design Process
+
+The process of visualization involves several steps. In order to create an effective visualization, we need to know the data, the audience needs, the principles of visualization, the relevant information to be visualized, the appropriate tools for creating visualization, and   
+
+* The initial step is to know the data 
+  + population or sample? 
+  + random sample or non-random sample? 
+  + information available in the data? 
+  + cross-sectional or longitudinal data?
+  + Spatial and temporal data? 
+  + Controlled Experimental data?
+  + complete or incomplete data?
+  + missing data and missing mechanism?
+  + appropriateness for descriptive statistics or inferential statistics
+  + specific information that is important to the audience/clients?
+  + What information do statisticians believe is important to audience/clients?
+  + unstructured data?
+  + data set with large size?
+  + process visualization?
+  
+* Potential Inferential Procedures - Broadly Regression and Prediction
+  + density estimation?
+  + contingency table analysis?
+  + association analysis?
+  + predictive analysis?
+  
+* Considerations of Visual Design - general 
+  + Understanding user/client needs?
+  + Implementing principles of visualization?
+  + Choosing colors and topography?
+  + Using animation and motion?
+  + Creating interactive visualizations?
+  + Testing and iterating?
+  
+* Using Appropriate Visualizing Tools and Visual Representation
+  + Point-and-click tools?
+  + Programmatic tools?
+  + static graphics?
+  + Interactive graphics?
+  + Real-time visualization?
+  
+
+
+# Philadelphia Crime Data (2015-2024)
+
+The crime data set is neither a population nor a random sample from a population. It is only a set of public records of crime in the neighborhoods of Philadelphia for the past 10 years. 
+
+* The data set has some special features
+  + The crimes are recorded chronically
+  + Some geographical information such as zip code, block, census trait, etc.
+  + crime types
+  + Victims' demographic information
+  
+* The audience might be interested in
+  + Trend of crime counts over the year
+  + age distributions by crime types
+  + Safety levels of neighborhoods in Philly
+  + whether the crime occurrences can be predicted
+  
+* Data integration procedure
+  + Information aggregation - counting crimes by regions such as blocks, neighborhoods, zip codes, etc.
+  + Merge shapefiles with crime data if possible.
+  + Crime trend by year 
+  
+* Visual Design
+  + line plot for trend
+  + bubble plot on the map
+  + Joint distribution with contingency table: crime and race
+  + density comparison
+  + animated plot with crime occurrence by year
+
+
+The following code reflects the above thoughts.
+
+
+```{r fig.align='center', fig.height=6, fig.width=10, warning=FALSE, message = FALSE}
+## Define a color palette
+pal <- colorFactor(c("red", "gold"), domain = c("Fatal", "Nonfatal"))
+
+## Define objects with geo-coordinate system to plot specific information
+pnt = st_as_sf(data.frame(x = -75.1652, y = 39.9526),
+                coords = c("x", "y"),
+                crs = 4326)
+media = st_as_sf(data.frame(x = -75.3877, y = 39.9168),
+                coords = c("x", "y"),
+                crs = 4326)
+ageDistloc = st_as_sf(data.frame(x = -75.3677, y = 39.9168),
+                coords = c("x", "y"),
+                crs = 4326)
+ziploc = st_as_sf(data.frame(x = -75.3477, y = 39.9168),
+                coords = c("x", "y"),
+                crs = 4326)
+aniloc = st_as_sf(data.frame(x = -75.3277, y = 39.9168),
+                coords = c("x", "y"),
+                crs = 4326)
+ageDistloc01 = st_as_sf(data.frame(x = -75.3077, y = 39.9168),
+                coords = c("x", "y"),
+                crs = 4326)
+#### Caution: plot_ly DID NOT show in the popup of leaflet. 
+fig <- plot_ly(ZipCrime, x = ~lng, y = ~lat, color = ~zip, size = ~total.crime, #colors = colors,
+               type = 'scatter', 
+               mode = 'markers', 
+               #sizes = c(min(log(ZipCrime$total.crime)), max(log(ZipCrime$total.crime))),
+               marker = list(symbol = 'circle', 
+                           sizemode = 'diameter',
+                               line = list(width = 2, color = '#FFFFFF')),
+               text = ~paste('Zip Code:', zip, 
+                      '<br>Total Crime:', total.crime, 
+                      '<br>Fatal Crime:', fatal,
+                      '<br>Nonfatal Crime:', nonfatal)) %>% hide_colorbar()
+## Images to be plot on the map
+img = "https://pengdsci.github.io/STA553VIZ/w08/PhillyCityHall.jpg"
+trend = "https://pengdsci.github.io/STA553VIZ/w08/CrimeTrend.jpg"
+ageDist = "https://pengdsci.github.io/STA553VIZ/w08/ageDist.jpg"
+trendIcon = "https://pengdsci.github.io/STA553VIZ/w08/trend-icon.jpg"
+crimeByYear= "https://pengdsci.github.io/STA553VIZ/w08/PhillyCrimeByYear.gif"
+## HTML style for the map title
+tag.map.title <- tags$style(HTML("
+               .leaflet-control.map-title {
+                   transform: translate(50%,50%);
+                   position: fixed !important;
+                   left: 5%;
+                   text-align: center;
+                   padding-left: 10px;
+                   padding-right: 10px;
+                   background: transparent;
+                   font-weight: bold;
+                   font-size: 18px;}
+                 "))
+
+rr <- tags$div(
+   HTML('<img border="0" alt="ImageTitle" src="https://pengdsci.github.io/STA553VIZ/w08/leafTitle.png" width="200" height="45">')
+ ) 
+
+######################################
+######################################
+## Data analysis
+## 1. age distribution by age
+fatal.cols <- c("#F76D5E", "#72D8FF")
+# Basic density plot in ggplot2
+fatalAge = ggplot(phillyCrime, aes(x = age, fill =fatal )) +
+           geom_density(alpha = 0.7)  +
+           scale_fill_manual(values = fatal.cols)
+##
+tble = as.matrix(table(phillyCrime$race, phillyCrime$fatal))
+dat.tbl = data.frame(race=rownames(tble), fatal = as.vector(tble[, 1]), non.fatal = as.vector(tble[, 2]))
+popups = paste(str_pad("Race", 20, "right"),  str_pad("Fatal", 20, "right"), str_pad("Nonfatal", 20, "right"), 
+"<br> Asian"  ,strrep(' ', 10),     25,strrep(' ', 6), strrep(' ', 20),  "86",
+"<br> Black (Non-Hispanic)", strrep(' ', 4),  "2628",strrep(' ', 5),   "9924",
+"<br> Hispanic (Black or White)", strrep(' ', 2),   "393",strrep(' ', 5),  "1482",
+"<br> Other/Unknown", strrep(' ', 9), "2",strrep(' ', 5),     "128",
+"<br> White (Non-Hispanic)", strrep(' ', 5),  "169", strrep(' ', 5), "683") 
+#poptble <- tble %>% htmlTable
+##################################################
+## Crime distribution by zip code - bubble plot
+pal0 <- colorNumeric(palette = viridis(256, option = "B"), domain = range(ZipCrime$total.crime))
+zipfig <- leaflet() %>%
+  setView(lng=-75.1527, lat=39.9707, zoom = 11) %>%
+  addProviderTiles(providers$Esri.WorldGrayCanvas) %>% 
+  ## plot the neighborhood boundary of Philly
+  addPolygons(data = phillyNeighbor,
+              color = 'skyblue',
+              weight = 1)  %>%
+  ##
+  addCircleMarkers(data = ZipCrime,
+                   radius = ~((total.crime)^(1/3)),
+                   color = ~pal0(total.crime),
+                   stroke = FALSE, 
+                   fillOpacity = 0.5,
+                   popup = ~paste('Zip Code:', zip, 
+                      '<br>Total Crime:', total.crime, 
+                      '<br>Fatal Crime:', fatal,
+                      '<br>Nonfatal Crime:', nonfatal)) 
+##################################################
+## popup interactive graphs with plotly
+fl = tempfile(fileext = ".html")
+saveWidget(zipfig, file = fl)
+###
+leaflet() %>%
+  setView(lng=-75.15092, lat=40.00995, zoom = 11) %>%
+  #addProviderTiles(providers$CartoDB.DarkMatter) %>% 
+  ##
+  addProviderTiles(providers$CartoDB.DarkMatter, group="Dark") %>%
+  addProviderTiles(providers$CartoDB.DarkMatterNoLabels, group="DarkLabel") %>%  
+  addProviderTiles(providers$Esri.NatGeoWorldMap, group="Esri") %>%
+  #addTiles(providers$CartoDB.PositronNoLabels) %>%
+  addControl(rr, position = "topleft", className="map-title") %>%
+  ## mini reference map
+  addMiniMap() %>%
+  ## neighborhood boundary
+  addPolygons(data = phillyNeighbor,
+              color = 'skyblue',
+              weight = 1)  %>%
+  ## plot information on the map
+  addCircleMarkers(data = phillyCrime,
+                   radius = ~ifelse(fatal == "Fatal", 5, 3),
+                   color = ~pal(fatal),
+                   stroke = FALSE, 
+                   fillOpacity = 0.5,
+                   popup = ~popupTable(phillyCrime),
+                   clusterOptions = markerClusterOptions(maxClusterRadius = 40)) %>%
+  # Adding the image of city hall
+  addCircleMarkers(data = pnt, 
+                   color = "blue",
+                   weight = 2,
+                   label = "City Hall",
+                   stroke = FALSE, 
+                   fillOpacity = 0.95,
+                   group = "pnt") %>%
+  addPopupImages(img, 
+                  width = 100,
+                  height = 120,
+                  tooltip = FALSE,
+                  group = "pnt")  %>%
+  # Trend of crimes over the years
+  addCircleMarkers(data = media, 
+                   color = "red",
+                   weight = 2,
+                   label = "Trend",
+                   stroke = FALSE, 
+                   fillOpacity = 0.95,
+                   group = "media") %>%
+  addPopupImages(trend, 
+                  width = 500,
+                  height = 350,
+                  tooltip = FALSE,
+                  group = "media") %>%
+ # age distribution within the two types of crimes
+ addCircleMarkers(data = ageDistloc, 
+                   color = "skyblue",
+                   weight = 2,
+                   label = "Age Distribution",
+                   stroke = FALSE, 
+                   fillOpacity = 0.95,
+                   group = "ageDistloc") %>%
+  addPopupImages(ageDist, 
+                  width = 500,
+                  height = 320,
+                  tooltip = FALSE,
+                  group = "ageDistloc") %>%
+  # Crime counts by zip code: bubble plot
+  addCircleMarkers(data = ziploc, 
+                   color = "white",
+                   weight = 2,
+                   label = "ZIP Location",
+                   stroke = FALSE, 
+                   fillOpacity = 0.95,
+                   group = "ziploc") %>%
+  leafpop:::addPopupIframes(
+                  source = fl,
+                   width = 500,
+                  height = 400,
+                   group = "ziploc" ) %>%
+  # Animated (cumulative) crime counts by years
+  addCircleMarkers(data = aniloc, 
+                   color = "gold",
+                   weight = 2,
+                   label = "Crimes Accumulation by year",
+                   stroke = FALSE, 
+                   fillOpacity = 0.95,
+                   group = "aniloc") %>%
+  addPopupImages(crimeByYear, 
+                  width = 500,
+                  height = 400,
+                  tooltip = FALSE,
+                  group = "aniloc") %>% 
+  # Crime counts by zip code: bubble plot
+  addCircleMarkers(data = ageDistloc01, 
+                   color = "purple",
+                   weight = 2,
+                   label = "Contingency Table: Race vs Crime Type",
+                   stroke = FALSE, 
+                   fillOpacity = 0.95,
+                   popup = ~popups) %>%
+  addLayersControl(baseGroups = c('Dark', 'DarkLabel', 'Esri'),
+                   overlayGroups = c("Crime Data"),
+                   options = layersControlOptions(collapsed = TRUE)) %>%
+  ##
+  browsable()
+```
+
+The animated plot (gif) is based on the following code
+
+```{r}
+which_state <- "pennsylvania"
+county_info <- map_data("county", region=which_state)
+philly_info <- county_info[county_info$subregion == "philadelphia",]
+phillyCrime$YEAR = as.integer(as.numeric(phillyCrime$year))
+pal <- colorFactor(c("red", "gold"), domain = c("Fatal", "Nonfatal"))
+##
+base_map <- ggplot(data = philly_info, mapping = aes(x = long, y = lat, group = group)) +
+ geom_polygon(color = "red", fill = "white") +
+  coord_quickmap() +
+  theme_void() 
+
+map_with_data <- base_map +
+  geom_point(data = phillyCrime, aes(x = lng, y = lat, group=YEAR))
+
+map_with_data <- base_map +
+  geom_point(data = phillyCrime, aes(x = lng, y = lat, color = fatal, fill = fatal, group=year), size = 2, alpha = 0.5)  +
+  scale_shape_manual(values = c(21, 24)) +
+  scale_color_manual(values = c("#FC4E07", "#E7B800") )
+
+map_with_animation <- map_with_data +
+  transition_time(YEAR) +
+  ggtitle('Year: {frame_time}') +
+   shadow_mark()
+
+anim_save("PhillyCrimeByYear.gif", map_with_animation)
+#animate(map_with_animation)
+```
+
+
+
+
+
+# Practice Exercise
+
+This assignment uses a data set that contains the records of shootings that occurred in Philadelphia in the past few years. The data set is available at [OpenDataPhilly](https://opendataphilly.org/datasets/). The URL of the specific data set is at: [https://opendataphilly.org/datasets/shooting-victims/](https://opendataphilly.org/datasets/shooting-victims/).  The Philly shooting data set is given in several formats. We use the geojson file. I also upload this geojson file to my GitHub repository so that you can read the file directly using the R function `st_read` (see the following code). There are two shapefiles of the Philly neighborhood and blocks were also used in the case study. If you want to use these two shapefiles in your visual design, please feel free to use one or both of them.
+
+
+```{r message=FALSE, warning=FALSE, paged.print=FALSE, results=FALSE}
+phillyNeighborShooting  <- na.omit(st_read("https://pengdsci.github.io/STA553VIZ/w08/PhillyShootings.geojson"))
+```
+
+The objective is to use this data set to create an interactive map that contains information about both individualized observation and aggregated formation.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
